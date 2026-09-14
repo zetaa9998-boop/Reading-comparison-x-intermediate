@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Reading Practice - Comparison (Grade X)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .option-card {
+            transition: all 0.2s ease;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(51, 65, 85, 0.95);
+        }
+        .option-selected {
+            background: rgba(99, 102, 241, 0.25) !important;
+            border-color: #6366f1 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-4xl mx-auto">
+
+        <!-- ================= START SCREEN ================= -->
+        <div id="start-screen" class="glass-panel rounded-3xl p-8 text-center flex flex-col items-center">
+            <div class="w-24 h-24 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20 text-indigo-400">
+                <i class="fas fa-book-reader text-5xl"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-white">Interactive Reading: Comparison (Grade X)</h1>
+            <h2 class="text-lg md:text-xl text-indigo-300 font-semibold mb-4">Kurikulum Merdeka English Focus (Fase E)</h2>
+            <p class="text-slate-300 mb-6 max-w-xl leading-relaxed text-sm md:text-base">
+                Uji pemahaman bacaan bahasa Inggrismu dengan fokus pada materi <span class="text-amber-400 font-bold">Comparison Degrees (Positive: as...as, Comparative: -er / more..., Superlative: -est / most...)</span> khusus untuk tingkat Kelas X. Selesaikan <span class="text-indigo-400 font-bold">25 soal interaktif</span> lengkap dengan teks analisis dan pembahasan langsung!
+            </p>
+            
+            <div class="mb-6 w-full max-w-sm space-y-4 text-left">
+                <div>
+                    <label for="player-name" class="block text-sm font-medium text-slate-300 mb-1">Nama Lengkap</label>
+                    <input type="text" id="player-name" class="w-full px-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm" placeholder="Masukkan nama kamu..." autocomplete="off">
+                    <p id="name-error" class="text-rose-400 text-xs mt-1 hidden"><i class="fas fa-exclamation-circle"></i> Nama harus diisi!</p>
+                </div>
+                <div>
+                    <label for="player-class" class="block text-sm font-medium text-slate-300 mb-1">Kelas</label>
+                    <input type="text" id="player-class" class="w-full px-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm" placeholder="Contoh: X E 1 / X MIPA 3" autocomplete="off">
+                    <p id="class-error" class="text-rose-400 text-xs mt-1 hidden"><i class="fas fa-exclamation-circle"></i> Kelas harus diisi!</p>
+                </div>
+            </div>
+
+            <button onclick="validateAndStart()" class="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-base transition-all transform hover:scale-105 shadow-lg shadow-indigo-500/30 flex items-center gap-2">
+                <i class="fas fa-play"></i> Mulai 25 Soal Reading
+            </button>
+        </div>
+
+        <!-- ================= QUIZ SCREEN ================= -->
+        <div id="quiz-screen" class="glass-panel rounded-3xl p-6 md:p-8 hidden flex-col">
+            <!-- Header Progress & Info -->
+            <div class="flex flex-wrap justify-between items-center mb-6 pb-4 border-b border-slate-700/60 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-500/20 px-4 py-1.5 rounded-lg text-indigo-300 font-semibold border border-indigo-500/20 text-sm">
+                        Soal <span id="current-q-num">1</span> dari <span id="total-q-num">25</span>
+                    </div>
+                    <span id="reading-context-tag" class="px-3 py-1 bg-indigo-950 text-indigo-300 text-xs font-bold rounded-full border border-indigo-800 hidden md:inline-block">Reading Passage Grade X</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-slate-400 text-xs md:text-sm font-medium">
+                        Skor Sementara: <span id="live-score" class="text-emerald-400 font-bold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Reading Text Column -->
+                <div class="lg:col-span-5 bg-slate-900/60 p-5 rounded-2xl border border-slate-700/80 flex flex-col max-h-[400px] lg:max-h-[500px] overflow-y-auto">
+                    <div class="flex items-center gap-2 mb-3 text-indigo-400 font-semibold text-xs uppercase tracking-wider">
+                        <i class="fas fa-newspaper"></i> Teks Bacaan Referensi (Grade X)
+                    </div>
+                    <h4 id="passage-title" class="font-bold text-white text-base mb-2">Title</h4>
+                    <div id="passage-text" class="text-slate-300 text-xs md:text-sm leading-relaxed space-y-3">
+                        Passage text...
+                    </div>
+                </div>
+
+                <!-- Question & Options Column -->
+                <div class="lg:col-span-7 flex flex-col justify-between">
+                    <div>
+                        <div class="bg-slate-900/40 p-5 rounded-2xl border border-slate-800 mb-4">
+                            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2 block" id="question-category">Grammar & Comparison Focus</span>
+                            <h3 class="text-base md:text-lg font-bold text-white mb-4" id="question-text">Question text here...</h3>
+                            
+                            <!-- Options Container -->
+                            <div id="options-container" class="space-y-3">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Explanation Box (Initially Hidden) -->
+                        <div id="explanation-box" class="hidden bg-slate-950/80 p-4 rounded-xl border border-indigo-500/40 mb-4">
+                            <p class="text-xs text-indigo-300 font-bold uppercase mb-1"><i class="fas fa-lightbulb mr-1"></i> Pembahasan (Explanation):</p>
+                            <p id="explanation-text" class="text-slate-300 text-xs leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Action Button -->
+                    <div class="flex justify-end pt-2">
+                        <button id="next-btn" onclick="handleNextQuestion()" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                            <span>Lanjut</span> <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SUMMARY SCREEN ================= -->
+        <div id="end-screen" class="glass-panel rounded-3xl p-8 text-center hidden flex-col items-center">
+            <div class="w-24 h-24 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-4xl mb-6 shadow-xl shadow-amber-500/10">
+                <i class="fas fa-award"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2 text-white">Sesi Latihan Reading Kelas X Selesai!</h1>
+            <p class="text-slate-300 mb-6" id="end-subtitle">Luar biasa! Kamu telah menyelesaikan 25 soal comparison teks tingkat kelas X.</p>
+            
+            <div class="bg-slate-900/60 rounded-2xl p-6 mb-8 w-full max-w-md border border-slate-800">
+                <p class="text-sm text-slate-400 uppercase tracking-wider mb-1 font-semibold">Skor Akhir Kamu</p>
+                <p class="text-5xl font-bold text-indigo-400 mb-2" id="final-score">0</p>
+                <p class="text-xs text-slate-400" id="final-stats-detail">Benar 0 dari 25 soal</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md">
+                <button onclick="downloadPDFReport()" class="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-file-pdf"></i> Unduh Laporan PDF
+                </button>
+                <button onclick="resetApp()" class="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-all border border-slate-700 flex items-center justify-center gap-2">
+                    <i class="fas fa-rotate-right"></i> Menu Utama
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Passage definitions for Grade X grouped questions
+        const passages = {
+            p1: {
+                title: "Passage 1: My Two Pets: Cat and Dog",
+                text: "I have two pets at home: a cat named Miko and a dog named Bruno. Bruno is bigger and heavier than Miko. However, Miko is quieter and cleaner than Bruno. Bruno likes to run fast in the yard, while Miko prefers to sleep peacefully on the soft sofa. Among all animals in my house, Bruno is the friendliest and most active pet."
+            },
+            p2: {
+                title: "Passage 2: Comparing Two Towns: Mountain Village vs. Coastal City",
+                text: "My grandparents live in a peaceful mountain village, while my uncle lives in a bustling coastal city. The air in the mountain village is much fresher and cooler than the air in the city. On the other hand, the coastal city has larger shopping malls and wider streets than the village. Many visitors think that visiting the mountain is the most relaxing vacation experience."
+            },
+            p3: {
+                title: "Passage 3: Two High School Students: Budi and Andi",
+                text: "Budi and Andi are classmates in grade X. Budi is taller than Andi, but Andi is more diligent in mathematics. Budi can run faster than Andi during sports class, yet Andi reads storybooks more frequently than Budi. In their classroom, Andi is known as the quietest student, whereas Budi is the most talkative boy."
+            },
+            p4: {
+                title: "Passage 4: Two Vehicles: Bicycle vs. Motorcycle",
+                text: "Nowadays, students use different vehicles to go to school. Riding a bicycle is cheaper and healthier than riding a motorcycle because it requires physical pedaling and no gasoline. However, a motorcycle is much faster than a bicycle when traveling long distances. For saving money and protecting nature, cycling is wiser than driving motor vehicles."
+            },
+            p5: {
+                title: "Passage 5: Favorite Fruits: Apples vs. Bananas",
+                text: "My sister and I love eating healthy fruit. Apples are harder and crisper than soft bananas. Bananas are sweeter and easier to peel than apples. My mother says that bananas give the quickest energy before sports practice, making them our favorite healthy snack after school."
+            }
+        };
+
+        // 25 Grade X Questions mapping to passages
+        const questionsData = [
+            // Passage 1 (Q1 - Q5)
+            {
+                passageId: 'p1',
+                category: 'Comparative Adjective',
+                question: 'Based on Passage 1, how does Bruno compare in size to Miko?',
+                options: [
+                    'Bruno is smaller and lighter than Miko.',
+                    'Bruno is bigger and heavier than Miko.',
+                    'Bruno and Miko are the same size.',
+                    'Bruno is tinier than a mouse.'
+                ],
+                correct: 1,
+                explanation: 'Passage 1 states: "Bruno is bigger and heavier than Miko."'
+            },
+            {
+                passageId: 'p1',
+                category: 'Comparative Adjective',
+                question: 'According to the text, how is Miko described compared to Bruno?',
+                options: [
+                    'Miko is louder and dirtier.',
+                    'Miko is quieter and cleaner than Bruno.',
+                    'Miko is faster than Bruno.',
+                    'Miko is heavier than Bruno.'
+                ],
+                correct: 1,
+                explanation: 'The text notes: "However, Miko is quieter and cleaner than Bruno."'
+            },
+            {
+                passageId: 'p1',
+                category: 'Superlative Adjective',
+                question: 'Among all animals in the house, what is Bruno considered to be?',
+                options: [
+                    'The quietest and laziest',
+                    'The friendliest and most active pet',
+                    'The smallest and oldest',
+                    'The scariest animal'
+                ],
+                correct: 1,
+                explanation: 'Passage 1 states: "Among all animals in my house, Bruno is the friendliest and most active pet."'
+            },
+            {
+                passageId: 'p1',
+                category: 'Comparative Habit',
+                question: 'What does Miko prefer to do instead of running fast?',
+                options: [
+                    'Chase cars in the street',
+                    'Sleep peacefully on the soft sofa',
+                    'Swim in the swimming pool',
+                    'Climb high trees'
+                ],
+                correct: 1,
+                explanation: 'The text states: "...while Miko prefers to sleep peacefully on the soft sofa."'
+            },
+            {
+                passageId: 'p1',
+                category: 'Vocabulary / Context',
+                question: 'How many pets does the author have at home?',
+                options: [
+                    'One pet',
+                    'Two pets',
+                    'Three pets',
+                    'Four pets'
+                ],
+                correct: 1,
+                explanation: 'The text begins: "I have two pets at home: a cat named Miko and a dog named Bruno."'
+            },
+
+            // Passage 2 (Q2 - Q10) -> Passage 2 (Q6 - Q10)
+            {
+                passageId: 'p2',
+                category: 'Comparative Adjective',
+                question: 'How does the air in the mountain village compare to the city air?',
+                options: [
+                    'The air in the mountain village is much fresher and cooler than the city.',
+                    'The air in the city is fresher and cooler.',
+                    'The air quality is identical in both places.',
+                    'There is no air in the mountain village.'
+                ],
+                correct: 0,
+                explanation: 'Passage 2 states: "The air in the mountain village is much fresher and cooler than the air in the city."'
+            },
+            {
+                passageId: 'p2',
+                category: 'Comparative Adjective',
+                question: 'What features does the coastal city have compared to the village?',
+                options: [
+                    'Smaller malls and narrower streets',
+                    'Larger shopping malls and wider streets',
+                    'Fewer buildings and quiet alleys',
+                    'No streets at all'
+                ],
+                correct: 1,
+                explanation: 'The text notes: "On the other hand, the coastal city has larger shopping malls and wider streets than the village."'
+            },
+            {
+                passageId: 'p2',
+                category: 'Superlative Adjective',
+                question: 'What do many visitors think about visiting the mountain village?',
+                options: [
+                    'It is the most boring trip.',
+                    'It is the most relaxing vacation experience.',
+                    'It is the most dangerous journey.',
+                    'It is the most expensive holiday.'
+                ],
+                correct: 1,
+                explanation: 'Passage 2 states: "Many visitors think that visiting the mountain is the most relaxing vacation experience."'
+            },
+            {
+                passageId: 'p2',
+                category: 'Comparative Living',
+                question: 'Where does the author’s uncle live according to the text?',
+                options: [
+                    'In a peaceful mountain village',
+                    'In a bustling coastal city',
+                    'On a remote island',
+                    'In a desert town'
+                ],
+                correct: 1,
+                explanation: 'The text states: "...while my uncle lives in a bustling coastal city."'
+            },
+            {
+                passageId: 'p2',
+                category: 'Main Idea / Comparison',
+                question: 'What is the main comparison highlighted in Passage 2?',
+                options: [
+                    'Two different schools',
+                    'A mountain village and a coastal city',
+                    'Two different animals',
+                    'Two types of fruit'
+                ],
+                correct: 1,
+                explanation: 'Passage 2 compares a mountain village with a coastal city.'
+            },
+
+            // Passage 3 (Q11 - Q15)
+            {
+                passageId: 'p3',
+                category: 'Comparative Adjective (Height)',
+                question: 'How does Budi compare in height to Andi?',
+                options: [
+                    'Budi is shorter than Andi.',
+                    'Budi is taller than Andi.',
+                    'Budi and Andi have the exact same height.',
+                    'Budi is extremely tiny.'
+                ],
+                correct: 1,
+                explanation: 'Passage 3 states: "Budi is taller than Andi..."'
+            },
+            {
+                passageId: 'p3',
+                category: 'Comparative Subject Skill',
+                question: 'Who is more diligent in mathematics according to the text?',
+                options: [
+                    'Budi',
+                    'Andi',
+                    'Both are lazy',
+                    'The teacher'
+                ],
+                correct: 1,
+                explanation: 'The text notes: "...but Andi is more diligent in mathematics."'
+            },
+            {
+                passageId: 'p3',
+                category: 'Comparative Action (Running)',
+                question: 'What can Budi do faster than Andi during sports class?',
+                options: [
+                    'Read books',
+                    'Run faster',
+                    'Solve math problems',
+                    'Sleep longer'
+                ],
+                correct: 1,
+                explanation: 'Passage 3 states: "Budi can run faster than Andi during sports class..."'
+            },
+            {
+                passageId: 'p3',
+                category: 'Superlative Adjective',
+                question: 'How is Andi described superlatively in the classroom?',
+                options: [
+                    'The quietest student',
+                    'The loudest student',
+                    'The tallest boy',
+                    'The fastest runner'
+                ],
+                correct: 0,
+                explanation: 'The text states: "In their classroom, Andi is known as the quietest student..."'
+            },
+            {
+                passageId: 'p3',
+                category: 'Superlative Adjective',
+                question: 'How is Budi described at the end of Passage 3?',
+                options: [
+                    'The most talkative boy',
+                    'The most silent kid',
+                    'The poorest student',
+                    'The best singer'
+                ],
+                correct: 0,
+                explanation: 'The text notes: "...whereas Budi is the most talkative boy."'
+            },
+
+            // Passage 4 (Q16 - Q20)
+            {
+                passageId: 'p4',
+                category: 'Comparative Adjective (Cost & Health)',
+                question: 'Why is riding a bicycle cheaper and healthier than a motorcycle?',
+                options: [
+                    'Because it requires physical pedaling and no gasoline.',
+                    'Because bicycles cost a million dollars.',
+                    'Because motorcycles use water instead of gas.',
+                    'Because bicycles have motors.'
+                ],
+                correct: 0,
+                explanation: 'Passage 4 states: "Riding a bicycle is cheaper and healthier than riding a motorcycle because it requires physical pedaling and no gasoline."'
+            },
+            {
+                passageId: 'p4',
+                category: 'Comparative Adjective (Speed)',
+                question: 'How does a motorcycle compare to a bicycle when traveling long distances?',
+                options: [
+                    'A motorcycle is much slower.',
+                    'A motorcycle is much faster than a bicycle.',
+                    'They travel at the exact same speed.',
+                    'Motorcycles cannot move long distances.'
+                ],
+                correct: 1,
+                explanation: 'The text notes: "However, a motorcycle is much faster than a bicycle when traveling long distances."'
+            },
+            {
+                passageId: 'p4',
+                category: 'Comparative Conclusion (Wisdom)',
+                question: 'What is considered wiser for saving money and protecting nature?',
+                options: [
+                    'Driving fast cars',
+                    'Cycling instead of driving motor vehicles',
+                    'Riding buses everywhere',
+                    'Staying at home'
+                ],
+                correct: 1,
+                explanation: 'Passage 4 states: "For saving money and protecting nature, cycling is wiser than driving motor vehicles."'
+            },
+            {
+                passageId: 'p4',
+                category: 'Vocabulary',
+                question: 'What does the word "cheaper" mean in Indonesian?',
+                options: [
+                    'Lebih mahal',
+                    'Lebih murah',
+                    'Lebih cepat',
+                    'Lebih lambat'
+                ],
+                correct: 1,
+                explanation: '"Cheaper" is the comparative form of cheap, meaning "lebih murah".'
+            },
+            {
+                passageId: 'p4',
+                category: 'Context / Grade X Theme',
+                question: 'What daily activity is discussed in Passage 4?',
+                options: [
+                    'Cooking food in the kitchen',
+                    'Going to school using vehicles',
+                    'Gardening in the backyard',
+                    'Swimming in the river'
+                ],
+                correct: 1,
+                explanation: 'The text begins: "Nowadays, students use different vehicles to go to school."'
+            },
+
+            // Passage 5 (Q21 - Q25)
+            {
+                passageId: 'p5',
+                category: 'Comparative Adjective (Texture)',
+                question: 'How do apples compare in texture to bananas according to Passage 5?',
+                options: [
+                    'Apples are harder and crisper than soft bananas.',
+                    'Apples are softer than bananas.',
+                    'Both fruits have identical texture.',
+                    'Apples are liquid.'
+                ],
+                correct: 0,
+                explanation: 'Passage 5 states: "Apples are harder and crisper than soft bananas."'
+            },
+            {
+                passageId: 'p5',
+                category: 'Comparative Adjective (Taste & Peel)',
+                question: 'What makes bananas different from apples regarding taste and skin?',
+                options: [
+                    'Bananas are sour and hard to peel.',
+                    'Bananas are sweeter and easier to peel than apples.',
+                    'Bananas have no taste.',
+                    'Apples are sweeter than bananas.'
+                ],
+                correct: 1,
+                explanation: 'The text notes: "Bananas are sweeter and easier to peel than apples."'
+            },
+            {
+                passageId: 'p5',
+                category: 'Superlative Adjective',
+                question: 'What do bananas provide before sports practice according to the mother?',
+                options: [
+                    'The slowest recovery',
+                    'The quickest energy',
+                    'Cold temperature',
+                    'Heavy stomachache'
+                ],
+                correct: 1,
+                explanation: 'Passage 5 states: "...bananas give the quickest energy before sports practice..."'
+            },
+            {
+                passageId: 'p5',
+                category: 'Context / Snack Choice',
+                question: 'When do the author and sister enjoy eating these healthy snacks?',
+                options: [
+                    'Before going to bed at night',
+                    'After school',
+                    'During midnight breakfast',
+                    'In the morning before waking up'
+                ],
+                correct: 1,
+                explanation: 'The text concludes: "...making them our favorite healthy snack after school."'
+            },
+            {
+                passageId: 'p5',
+                category: 'Grammar Focus (Comparison)',
+                question: 'In the phrase "sweeter and easier to peel", what suffix forms the comparative degree for short adjectives like sweet?',
+                options: [
+                    '-est',
+                    '-er',
+                    '-ly',
+                    '-ing'
+                ],
+                correct: 1,
+                explanation: 'Short adjectives form their comparative degree by adding "-er" (e.g., sweet becomes sweeter).'
+            }
+        ];
+
+        let playerName = "";
+        let playerClass = "";
+        let currentQuestionIdx = 0;
+        let score = 0;
+        let userAnswers = new Array(questionsData.length).fill(null);
+        let selectedOption = null;
+
+        function validateAndStart() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            const classInput = document.getElementById('player-class').value.trim();
+            
+            const nameError = document.getElementById('name-error');
+            const classError = document.getElementById('class-error');
+            
+            let isValid = true;
+
+            if (!nameInput) {
+                nameError.classList.remove('hidden');
+                document.getElementById('player-name').classList.add('border-rose-500');
+                isValid = false;
+            } else {
+                nameError.classList.add('hidden');
+                document.getElementById('player-name').classList.remove('border-rose-500');
+            }
+
+            if (!classInput) {
+                classError.classList.remove('hidden');
+                document.getElementById('player-class').classList.add('border-rose-500');
+                isValid = false;
+            } else {
+                classError.classList.add('hidden');
+                document.getElementById('player-class').classList.remove('border-rose-500');
+            }
+
+            if (isValid) {
+                playerName = nameInput;
+                playerClass = classInput;
+                startQuiz();
+            }
+        }
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            const quizScreen = document.getElementById('quiz-screen');
+            quizScreen.classList.remove('hidden');
+            quizScreen.classList.add('flex');
+            currentQuestionIdx = 0;
+            score = 0;
+            userAnswers.fill(null);
+            loadQuestion(currentQuestionIdx);
+        }
+
+        function loadQuestion(idx) {
+            currentQuestionIdx = idx;
+            const q = questionsData[idx];
+            const p = passages[q.passageId];
+
+            document.getElementById('current-q-num').innerText = idx + 1;
+            document.getElementById('total-q-num').innerText = questionsData.length;
+            document.getElementById('live-score').innerText = score;
+
+            // Load Passage
+            document.getElementById('passage-title').innerText = p.title;
+            document.getElementById('passage-text').innerText = p.text;
+
+            // Load Question
+            document.getElementById('question-category').innerText = `Focus: ${q.category}`;
+            document.getElementById('question-text').innerText = q.question;
+
+            // Load Options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, oIdx) => {
+                const isSelected = userAnswers[idx] === oIdx;
+                const btn = document.createElement('div');
+                btn.className = `option-card p-3.5 rounded-xl border border-slate-700 bg-slate-900/60 cursor-pointer text-sm text-slate-200 flex items-center gap-3 ${isSelected ? 'option-selected' : ''}`;
+                btn.onclick = () => selectOption(oIdx);
+                btn.innerHTML = `
+                    <div class="w-6 h-6 rounded-full border border-slate-600 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0 ${isSelected ? 'border-indigo-500 bg-indigo-500 text-white' : ''}">${String.fromCharCode(65 + oIdx)}</div>
+                    <div>${opt}</div>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Reset explanation and next button state
+            document.getElementById('explanation-box').classList.add('hidden');
+            const nextBtn = document.getElementById('next-btn');
+            
+            if (userAnswers[idx] !== null) {
+                showExplanationState(userAnswers[idx] === q.correct);
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                selectedOption = null;
+                nextBtn.disabled = true;
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function selectOption(oIdx) {
+            if (userAnswers[currentQuestionIdx] !== null) return; // Prevent changing after answered
+
+            selectedOption = oIdx;
+            userAnswers[currentQuestionIdx] = oIdx;
+
+            const q = questionsData[currentQuestionIdx];
+            const isCorrect = oIdx === q.correct;
+            
+            if (isCorrect) {
+                score += 4; // 25 questions * 4 = 100 max score
+            }
+
+            document.getElementById('live-score').innerText = score;
+
+            // Re-render options to show selection
+            const optionsContainer = document.getElementById('options-container');
+            const cards = optionsContainer.children;
+            for (let i = 0; i < cards.length; i++) {
+                if (i === oIdx) {
+                    cards[i].classList.add('option-selected');
+                    cards[i].querySelector('div').className = "w-6 h-6 rounded-full border border-indigo-500 bg-indigo-500 text-white flex items-center justify-center text-xs font-bold shrink-0";
+                } else {
+                    cards[i].classList.remove('option-selected');
+                    cards[i].querySelector('div').className = "w-6 h-6 rounded-full border border-slate-600 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0";
+                }
+            }
+
+            showExplanationState(isCorrect);
+
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function showExplanationState(isCorrect) {
+            const q = questionsData[currentQuestionIdx];
+            const expBox = document.getElementById('explanation-box');
+            const expText = document.getElementById('explanation-text');
+            
+            expText.innerHTML = `<span class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold">${isCorrect ? 'Jawaban Kamu Benar!' : 'Jawaban Kamu Kurang Tepat.'}</span> ${q.explanation}`;
+            expBox.classList.remove('hidden');
+        }
+
+        function handleNextQuestion() {
+            if (currentQuestionIdx < questionsData.length - 1) {
+                currentQuestionIdx++;
+                loadQuestion(currentQuestionIdx);
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('flex');
+            
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden');
+            endScreen.classList.add('flex');
+
+            const correctCount = score / 4;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-stats-detail').innerText = `Benar ${correctCount} dari 25 soal (${score} poin)`;
+            document.getElementById('end-subtitle').innerText = `Luar biasa, ${playerName}! Kamu telah menyelesaikan latihan reading comparison kelas X dengan sangat baik.`;
+        }
+
+        function downloadPDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const correctCount = score / 4;
+            const testDate = new Date().toLocaleString('id-ID');
+
+            // Header banner (Indigo theme for Grade X)
+            doc.setFillColor(99, 102, 241);
+            doc.rect(0, 0, 210, 35, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("LAPORAN HASIL LATIHAN READING (GRADE X)", 14, 15);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("Kurikulum Merdeka English - Comparison Focus (Fase E)", 14, 25);
+
+            // Student Info Box
+            doc.setFillColor(241, 245, 249);
+            doc.roundedRect(14, 42, 182, 26, 3, 3, 'F');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(`Nama Siswa : ${playerName}`, 18, 50);
+            doc.text(`Kelas          : ${playerClass}`, 18, 58);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text(`Tanggal: ${testDate}`, 130, 50);
+            doc.text(`Skor Akhir: ${score} / 100`, 130, 58);
+
+            let yPos = 78;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(`Detail Jawaban Siswa (${correctCount} Benar dari 25 Soal)`, 14, yPos);
+            yPos += 8;
+
+            doc.setFontSize(9);
+
+            questionsData.forEach((q, idx) => {
+                if (yPos > 275) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+
+                const userAns = userAnswers[idx];
+                const isCorrect = userAns === q.correct;
+
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(30, 41, 59);
+                doc.text(`Soal #${idx + 1} [${q.category}]`, 14, yPos);
+                yPos += 5;
+
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(51, 65, 85);
+                const splitQuestion = doc.splitTextToSize(`Q: ${q.question}`, 180);
+                doc.text(splitQuestion, 14, yPos);
+                yPos += (splitQuestion.length * 4.5) + 2;
+
+                const userText = userAns !== null ? q.options[userAns] : 'Tidak dijawab';
+                const correctText = q.options[q.correct];
+
+                doc.setTextColor(isCorrect ? 16 : 225, isCorrect ? 185 : 29, isCorrect ? 129 : 72);
+                doc.text(`Jawaban Kamu: ${userText} (${isCorrect ? 'BENAR' : 'SALAH'})`, 14, yPos);
+                yPos += 5;
+
+                if (!isCorrect) {
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(`Kunci Jawaban: ${correctText}`, 14, yPos);
+                    yPos += 5;
+                }
+
+                yPos += 4;
+            });
+
+            const safeName = playerName.replace(/[^a-z0-9]/gi, '_');
+            const safeClass = playerClass.replace(/[^a-z0-9]/gi, '_');
+            doc.save(`Laporan_Reading_Comparison_X_${safeName}_${safeClass}.pdf`);
+        }
+
+        function resetApp() {
+            currentQuestionIdx = 0;
+            score = 0;
+            userAnswers.fill(null);
+            document.getElementById('player-name').value = "";
+            document.getElementById('player-class').value = "";
+            
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('flex');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('start-screen').classList.add('flex');
+        }
+    </script>
+</body>
+</html>
